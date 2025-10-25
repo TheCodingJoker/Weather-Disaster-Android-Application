@@ -80,3 +80,4 @@ public class DisasterAlertAdapter extends RecyclerView.Adapter<DisasterAlertAdap
 
 
 
+

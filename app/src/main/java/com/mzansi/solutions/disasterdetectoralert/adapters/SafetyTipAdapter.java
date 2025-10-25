@@ -59,3 +59,4 @@ public class SafetyTipAdapter extends RecyclerView.Adapter<SafetyTipAdapter.TipV
 
 
 
+

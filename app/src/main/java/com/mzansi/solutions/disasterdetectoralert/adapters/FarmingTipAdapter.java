@@ -68,3 +68,4 @@ public class FarmingTipAdapter extends RecyclerView.Adapter<FarmingTipAdapter.Vi
 
 
 
+

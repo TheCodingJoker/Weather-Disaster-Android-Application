@@ -115,3 +115,4 @@ public class DetailedAlertAdapter extends RecyclerView.Adapter<DetailedAlertAdap
 
 
 
+
