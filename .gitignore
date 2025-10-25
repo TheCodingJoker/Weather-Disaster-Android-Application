@@ -1,24 +1,35 @@
 # Android Studio / Gradle
 .gradle/
+.gradle-wrapper.jar
 build/
 **/build/
 local.properties
+/local.properties
 
 # Generated files
 *.apk
 *.ap_
 *.aab
 
-# Signing files
+# Signing / keystore files
 *.jks
 *.keystore
+keystore.properties
 key.properties
+
+# Google / SDK / sensitive files
+google-services.json
+credentials.properties
+secrets.properties
+.env
+.env.local
 
 # IntelliJ / Android Studio
 *.iml
 .idea/
 *.iws
 out/
+captures/
 
 # Kotlin / Java
 *.class
@@ -31,35 +42,12 @@ out/
 .cxx/
 *.so
 
-# Android Studio captures
-captures/
-
-# Google/SDK / sensitive files
-google-services.json
-credentials.properties
-secrets.properties
-.env
-.env.local
-
 # Misc
 .DS_Store
 *.log
 *.orig
 *.rej
 
-# Gradle wrapper (keep wrapper scripts but not caches)
-.gradle-wrapper.jar
-
-# Local build files
-/local.properties
-
-# Exclude any local keystore
-keystore.properties
-
 # Exclude coverage and reports
 coverage/
 reports/
-
-# Ignore Android Studio gradle settings
-.idea/
-.gradle/
