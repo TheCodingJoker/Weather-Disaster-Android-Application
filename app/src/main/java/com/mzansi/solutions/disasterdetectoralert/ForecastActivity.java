@@ -111,6 +111,14 @@ public class ForecastActivity extends AppCompatActivity implements ForecastDayAd
                 .setTitle("Exit App")
                 .setMessage("Do you really want to leave the app?")
                 .setPositiveButton("Yes", (dialog, which) -> {
+                    // Clear session and logout
+                    SessionManager sessionManager = new SessionManager(this);
+                    sessionManager.logout();
+                    
+                    // Clear community member location preferences
+                    SharedPreferences communityPrefs = getSharedPreferences(COMMUNITY_PREFS_NAME, MODE_PRIVATE);
+                    communityPrefs.edit().clear().apply();
+                    
                     // Exit the app completely
                     finishAffinity();
                 })
@@ -158,9 +166,18 @@ public class ForecastActivity extends AppCompatActivity implements ForecastDayAd
         weatherApiService = ApiClient.getWeatherService();
         geminiApiService = new GeminiApiService();
         
-        // Check if user is a logged-in farmer
+        // Check if user is logged in
         sessionManager = new SessionManager(this);
-        isFarmer = sessionManager.isLoggedIn();
+        if (!sessionManager.isLoggedIn()) {
+            // User is not logged in, redirect to appropriate login
+            Intent intent = new Intent(this, CommunityLoginActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        
+        // Check if user is a farmer
+        isFarmer = sessionManager.isFarmer();
         
         // Use appropriate SharedPreferences
         String prefsName = isFarmer ? FARMER_PREFS_NAME : COMMUNITY_PREFS_NAME;

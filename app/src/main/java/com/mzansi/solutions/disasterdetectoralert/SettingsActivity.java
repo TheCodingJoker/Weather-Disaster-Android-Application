@@ -43,11 +43,20 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        // Initialize SharedPreferences
-        sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        
         // Initialize SessionManager
         sessionManager = new SessionManager(this);
+        
+        // Check if user is logged in
+        if (!sessionManager.isLoggedIn()) {
+            // User is not logged in, redirect to appropriate login
+            Intent intent = new Intent(this, CommunityLoginActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
+        // Initialize SharedPreferences
+        sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
         // Initialize views
         initializeViews();
@@ -97,6 +106,14 @@ public class SettingsActivity extends AppCompatActivity {
                 .setTitle("Exit App")
                 .setMessage("Do you really want to leave the app?")
                 .setPositiveButton("Yes", (dialog, which) -> {
+                    // Clear session and logout
+                    SessionManager sessionManager = new SessionManager(this);
+                    sessionManager.logout();
+                    
+                    // Clear community member location preferences
+                    SharedPreferences communityPrefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                    communityPrefs.edit().clear().apply();
+                    
                     // Exit the app completely
                     finishAffinity();
                 })
@@ -175,6 +192,7 @@ public class SettingsActivity extends AppCompatActivity {
         
         // Navigate to LocationActivity to select a new location
         Intent intent = new Intent(this, LocationActivity.class);
+        intent.putExtra("is_farmer", false); // Community member
         startActivity(intent);
         
         // Don't finish this activity so user can come back to settings

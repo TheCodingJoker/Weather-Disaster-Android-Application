@@ -12,6 +12,10 @@ public class SessionManager {
     private static final String KEY_USER_ID = "userId";
     private static final String KEY_USER_EMAIL = "userEmail";
     private static final String KEY_USER_NAME = "userName";
+    private static final String KEY_USER_TYPE = "userType";
+    
+    public static final String USER_TYPE_FARMER = "farmer";
+    public static final String USER_TYPE_COMMUNITY = "community";
 
     private SharedPreferences prefs;
     private SharedPreferences.Editor editor;
@@ -29,13 +33,21 @@ public class SessionManager {
      * Create login session
      */
     public void createLoginSession(String userId, String email, String name) {
+        createLoginSession(userId, email, name, USER_TYPE_FARMER); // Default to farmer for backward compatibility
+    }
+    
+    /**
+     * Create login session with user type
+     */
+    public void createLoginSession(String userId, String email, String name, String userType) {
         editor.putBoolean(KEY_IS_LOGGED_IN, true);
         editor.putString(KEY_USER_ID, userId);
         editor.putString(KEY_USER_EMAIL, email);
         editor.putString(KEY_USER_NAME, name);
+        editor.putString(KEY_USER_TYPE, userType);
         editor.apply();
 
-        android.util.Log.d("SessionManager", "Login session created for: " + email);
+        android.util.Log.d("SessionManager", "Login session created for: " + email + " (Type: " + userType + ")");
     }
 
     /**
@@ -72,6 +84,27 @@ public class SessionManager {
      */
     public String getUserName() {
         return prefs.getString(KEY_USER_NAME, "Farmer");
+    }
+    
+    /**
+     * Get user type
+     */
+    public String getUserType() {
+        return prefs.getString(KEY_USER_TYPE, USER_TYPE_FARMER);
+    }
+    
+    /**
+     * Check if user is a farmer
+     */
+    public boolean isFarmer() {
+        return USER_TYPE_FARMER.equals(getUserType());
+    }
+    
+    /**
+     * Check if user is a community member
+     */
+    public boolean isCommunityMember() {
+        return USER_TYPE_COMMUNITY.equals(getUserType());
     }
 
     /**

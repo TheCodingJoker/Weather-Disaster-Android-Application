@@ -32,6 +32,7 @@ import com.mzansi.solutions.disasterdetectoralert.models.ForecastDay;
 import com.mzansi.solutions.disasterdetectoralert.models.ForecastResponse;
 import com.mzansi.solutions.disasterdetectoralert.models.WeatherData;
 import com.mzansi.solutions.disasterdetectoralert.models.WeatherResponse;
+import com.mzansi.solutions.disasterdetectoralert.utils.SessionManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +52,9 @@ public class DashboardActivity extends AppCompatActivity {
 
     // SharedPreferences
     private SharedPreferences sharedPreferences;
+    
+    // Session Manager
+    private SessionManager sessionManager;
 
     // Weather Views
     private ImageView ivWeatherIcon;
@@ -90,6 +94,17 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Check if user is logged in
+        sessionManager = new SessionManager(this);
+        if (!sessionManager.isLoggedIn()) {
+            // User is not logged in, redirect to login
+            Intent intent = new Intent(this, CommunityLoginActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_dashboard);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
@@ -169,7 +184,14 @@ public class DashboardActivity extends AppCompatActivity {
                 .setTitle("Exit App")
                 .setMessage("Do you really want to leave the app?")
                 .setPositiveButton("Yes", (dialog, which) -> {
-                    // Exit the app
+                    // Clear session and logout
+                    sessionManager.logout();
+                    
+                    // Clear community member location preferences
+                    SharedPreferences communityPrefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                    communityPrefs.edit().clear().apply();
+                    
+                    // Exit the app completely
                     finishAffinity();
                 })
                 .setNegativeButton("No", (dialog, which) -> {
@@ -230,6 +252,7 @@ public class DashboardActivity extends AppCompatActivity {
             android.util.Log.w("DashboardActivity", "No location selected, redirecting to LocationActivity");
             Toast.makeText(this, "Please select your location first", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(this, LocationActivity.class);
+            intent.putExtra("is_farmer", false); // Community member
             startActivity(intent);
             finish();
             return;

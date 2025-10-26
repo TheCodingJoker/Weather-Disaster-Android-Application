@@ -45,9 +45,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void onRoleSelected(String role) {
         if ("Community Member".equals(role)) {
-            // Navigate to location selection for community members
-            Intent intent = new Intent(this, LocationActivity.class);
-            intent.putExtra("is_farmer", false);
+            // Navigate to community member login page
+            Intent intent = new Intent(this, CommunityLoginActivity.class);
             startActivity(intent);
         } else if ("Community Farmer".equals(role)) {
             // Navigate to farmer login page

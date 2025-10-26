@@ -117,68 +117,6 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- Use Current Location Card -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/cardCurrentLocation"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:foreground="?android:attr/selectableItemBackground"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="4dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardSearchLocation">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="20dp">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginEnd="16dp"
-                android:contentDescription="@string/use_current_location"
-                android:src="@drawable/ic_my_location"
-                app:tint="@color/secondary_green" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/use_current_location"
-                    android:textColor="@color/text_primary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Use GPS to detect your current location"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:contentDescription="Arrow"
-                android:src="@drawable/ic_arrow_forward"
-                app:tint="@color/text_secondary" />
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-
     <!-- Selected Location Display -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardSelectedLocation"
@@ -191,7 +129,7 @@
         app:cardElevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardCurrentLocation">
+        app:layout_constraintTop_toBottomOf="@id/cardSearchLocation">
 
         <LinearLayout
             android:layout_width="match_parent"

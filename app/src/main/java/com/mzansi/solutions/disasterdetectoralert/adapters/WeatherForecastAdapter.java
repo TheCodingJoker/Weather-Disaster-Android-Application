@@ -72,14 +72,16 @@ public class WeatherForecastAdapter extends RecyclerView.Adapter<WeatherForecast
         }
 
         public void bind(ForecastDay forecastDay, int position) {
-            // Set day name
+            // Set day name - more intuitive labeling
             String dayName;
             if (position == 0) {
                 dayName = "Tomorrow";
             } else if (position == 1) {
                 dayName = "Day After";
+            } else if (position == 2) {
+                dayName = "In 3 Days";
             } else {
-                dayName = "In " + (position + 1) + " days";
+                dayName = "In " + (position + 1) + " Days";
             }
             tvForecastDay.setText(dayName);
 
@@ -100,8 +102,16 @@ public class WeatherForecastAdapter extends RecyclerView.Adapter<WeatherForecast
             // Set description
             tvForecastDescription.setText(forecastDay.getWeather().getDescription());
 
-            // Set precipitation probability
-            tvForecastPrecipitation.setText(String.format("Precip: %.0f%%", forecastDay.getPrecipitationProbability()));
+            // Set precipitation - show both probability and amount for better info
+            String precipText;
+            if (forecastDay.getPrecipitationProbability() > 0) {
+                precipText = String.format("%.0f%% (%.1fmm)", 
+                    forecastDay.getPrecipitationProbability(), 
+                    forecastDay.getPrecipitation());
+            } else {
+                precipText = "0%";
+            }
+            tvForecastPrecipitation.setText(precipText);
 
             // Load weather icon from Weatherbit API
             loadWeatherIcon(forecastDay.getWeather().getIconUrl());

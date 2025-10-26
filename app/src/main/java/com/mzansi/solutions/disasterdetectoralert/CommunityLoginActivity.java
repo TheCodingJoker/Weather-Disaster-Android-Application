@@ -23,7 +23,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.mzansi.solutions.disasterdetectoralert.utils.SessionManager;
 
-public class FarmerLoginActivity extends AppCompatActivity {
+public class CommunityLoginActivity extends AppCompatActivity {
 
     // Firebase
     private FirebaseAuth mAuth;
@@ -48,13 +48,13 @@ public class FarmerLoginActivity extends AppCompatActivity {
         sessionManager = new SessionManager(this);
         if (sessionManager.isLoggedIn()) {
             // User is already logged in, redirect to dashboard
-            Intent intent = new Intent(this, FarmerDashboardActivity.class);
+            Intent intent = new Intent(this, DashboardActivity.class);
             startActivity(intent);
             finish();
             return;
         }
         
-        setContentView(R.layout.activity_farmer_login);
+        setContentView(R.layout.activity_community_login);
 
         // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
@@ -127,7 +127,7 @@ public class FarmerLoginActivity extends AppCompatActivity {
         // Show loading
         showLoading(true);
 
-        android.util.Log.d("FarmerLoginActivity", "Login attempt - Email: " + email);
+        android.util.Log.d("CommunityLoginActivity", "Login attempt - Email: " + email);
 
         // Authenticate with Firebase
         mAuth.signInWithEmailAndPassword(email, password)
@@ -138,7 +138,7 @@ public class FarmerLoginActivity extends AppCompatActivity {
                         
                         if (task.isSuccessful()) {
                             // Login successful
-                            android.util.Log.d("FarmerLoginActivity", "signInWithEmail:success");
+                            android.util.Log.d("CommunityLoginActivity", "signInWithEmail:success");
                             FirebaseUser firebaseUser = mAuth.getCurrentUser();
                             
                             if (firebaseUser != null) {
@@ -146,17 +146,17 @@ public class FarmerLoginActivity extends AppCompatActivity {
                                 String userEmail = firebaseUser.getEmail();
                                 String userName = firebaseUser.getDisplayName();
                                 
-                                // Use display name if available, otherwise use "Farmer"
+                                // Use display name if available, otherwise use "Community Member"
                                 if (userName == null || userName.isEmpty()) {
-                                    userName = "Farmer";
+                                    userName = "Community Member";
                                 }
                                 
-                                android.util.Log.d("FarmerLoginActivity", "User logged in: " + userId);
+                                android.util.Log.d("CommunityLoginActivity", "User logged in: " + userId);
                                 
-                                // Create login session with farmer type
-                                sessionManager.createLoginSession(userId, userEmail, userName, SessionManager.USER_TYPE_FARMER);
+                                // Create login session with community type
+                                sessionManager.createLoginSession(userId, userEmail, userName, SessionManager.USER_TYPE_COMMUNITY);
                                 
-                                Toast.makeText(FarmerLoginActivity.this, 
+                                Toast.makeText(CommunityLoginActivity.this, 
                                         "Welcome back, " + userName + "!", 
                                         Toast.LENGTH_SHORT).show();
                                 
@@ -165,7 +165,7 @@ public class FarmerLoginActivity extends AppCompatActivity {
                             }
                         } else {
                             // Login failed
-                            android.util.Log.w("FarmerLoginActivity", "signInWithEmail:failure", task.getException());
+                            android.util.Log.w("CommunityLoginActivity", "signInWithEmail:failure", task.getException());
                             
                             String errorMessage = "Login failed. ";
                             if (task.getException() != null) {
@@ -186,7 +186,7 @@ public class FarmerLoginActivity extends AppCompatActivity {
                             }
                             
                             tilPassword.setError("Invalid credentials");
-                            Toast.makeText(FarmerLoginActivity.this, errorMessage, 
+                            Toast.makeText(CommunityLoginActivity.this, errorMessage, 
                                     Toast.LENGTH_LONG).show();
                         }
                     }
@@ -194,16 +194,16 @@ public class FarmerLoginActivity extends AppCompatActivity {
     }
 
     private void navigateToDashboard() {
-        // Navigate to location selection (same flow as community members)
+        // Navigate to location selection
         // After location is selected, user proceeds to DashboardActivity
         Intent intent = new Intent(this, LocationActivity.class);
-        intent.putExtra("is_farmer", true);
+        intent.putExtra("is_farmer", false);
         startActivity(intent);
         finish();
     }
 
     private void handleForgotPassword() {
-        android.util.Log.d("FarmerLoginActivity", "Forgot password clicked");
+        android.util.Log.d("CommunityLoginActivity", "Forgot password clicked");
         
         // Get email from the field if available
         String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
@@ -229,12 +229,12 @@ public class FarmerLoginActivity extends AppCompatActivity {
                     progressBar.setVisibility(View.GONE);
                     
                     if (task.isSuccessful()) {
-                        android.util.Log.d("FarmerLoginActivity", "Password reset email sent");
-                        Toast.makeText(FarmerLoginActivity.this, 
+                        android.util.Log.d("CommunityLoginActivity", "Password reset email sent");
+                        Toast.makeText(CommunityLoginActivity.this, 
                                 "Password reset link sent to " + email, 
                                 Toast.LENGTH_LONG).show();
                     } else {
-                        android.util.Log.w("FarmerLoginActivity", "Error sending password reset email", task.getException());
+                        android.util.Log.w("CommunityLoginActivity", "Error sending password reset email", task.getException());
                         
                         String errorMessage = "Failed to send reset email. ";
                         if (task.getException() != null) {
@@ -246,17 +246,17 @@ public class FarmerLoginActivity extends AppCompatActivity {
                             }
                         }
                         
-                        Toast.makeText(FarmerLoginActivity.this, errorMessage, 
+                        Toast.makeText(CommunityLoginActivity.this, errorMessage, 
                                 Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
     private void handleCreateAccount() {
-        android.util.Log.d("FarmerLoginActivity", "Create account clicked");
+        android.util.Log.d("CommunityLoginActivity", "Create account clicked");
         
         // Navigate to registration activity
-        Intent intent = new Intent(this, FarmerRegisterActivity.class);
+        Intent intent = new Intent(this, CommunityRegisterActivity.class);
         startActivity(intent);
     }
 
@@ -278,3 +278,4 @@ public class FarmerLoginActivity extends AppCompatActivity {
         finish();
     }
 }
+

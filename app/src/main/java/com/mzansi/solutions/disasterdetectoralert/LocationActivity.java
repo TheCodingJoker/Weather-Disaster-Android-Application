@@ -48,7 +48,6 @@ public class LocationActivity extends AppCompatActivity {
     private static final String KEY_LOCATION_LNG = "location_lng";
 
     private CardView cardSearchLocation;
-    private CardView cardCurrentLocation;
     private CardView cardSelectedLocation;
     private TextView tvSelectedLocationName;
     private TextView tvSelectedLocationAddress;
@@ -64,12 +63,37 @@ public class LocationActivity extends AppCompatActivity {
     private final ActivityResultLauncher<Intent> startAutocomplete = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
+                android.util.Log.d("LocationActivity", "Autocomplete result code: " + result.getResultCode());
+                
                 if (result.getResultCode() == RESULT_OK) {
                     Intent data = result.getData();
                     if (data != null) {
                         Place place = Autocomplete.getPlaceFromIntent(data);
                         onLocationSelected(place);
+                    } else {
+                        android.util.Log.w("LocationActivity", "Autocomplete returned OK but data is null");
+                        Toast.makeText(this, "Location selection failed. Please try again.", Toast.LENGTH_SHORT).show();
                     }
+                } else if (result.getResultCode() == RESULT_CANCELED) {
+                    android.util.Log.d("LocationActivity", "User canceled location search");
+                    // User canceled - no action needed, just return to location screen
+                } else {
+                    android.util.Log.w("LocationActivity", "Autocomplete failed with result code: " + result.getResultCode());
+                    
+                    // Check for specific error cases
+                    Intent data = result.getData();
+                    if (data != null) {
+                        try {
+                            Place place = Autocomplete.getPlaceFromIntent(data);
+                            if (place == null) {
+                                android.util.Log.w("LocationActivity", "Place is null in failed result");
+                            }
+                        } catch (Exception e) {
+                            android.util.Log.e("LocationActivity", "Error parsing failed result", e);
+                        }
+                    }
+                    
+                    Toast.makeText(this, "Location search failed. Please check your internet connection and try again.", Toast.LENGTH_LONG).show();
                 }
             });
 
@@ -96,8 +120,36 @@ public class LocationActivity extends AppCompatActivity {
         });
 
         // Initialize Google Places API
-        if (!Places.isInitialized()) {
-            Places.initialize(getApplicationContext(), BuildConfig.GOOGLE_PLACES_API_KEY);
+        try {
+            if (!Places.isInitialized()) {
+                String apiKey = BuildConfig.GOOGLE_PLACES_API_KEY;
+                android.util.Log.d("LocationActivity", "Initializing Places API with key: " + (apiKey != null ? apiKey.substring(0, Math.min(8, apiKey.length())) + "..." : "null"));
+                
+                if (apiKey == null || apiKey.isEmpty() || apiKey.contains("YOUR_")) {
+                    android.util.Log.e("LocationActivity", "Google Places API key is not configured properly");
+                    Toast.makeText(this, "Location search is not available. Please configure Google Places API key.", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                
+                Places.initialize(getApplicationContext(), apiKey);
+                android.util.Log.d("LocationActivity", "Places API initialized successfully");
+                
+                // Test if the API key is working by checking if we can create a client
+                try {
+                    com.google.android.libraries.places.api.net.PlacesClient placesClient = Places.createClient(this);
+                    android.util.Log.d("LocationActivity", "Places client created successfully - API key is valid");
+                } catch (Exception e) {
+                    android.util.Log.e("LocationActivity", "Failed to create Places client - API key may be invalid", e);
+                    Toast.makeText(this, "Google Places API key is invalid. Please check your API key configuration.", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            } else {
+                android.util.Log.d("LocationActivity", "Places API already initialized");
+            }
+        } catch (Exception e) {
+            android.util.Log.e("LocationActivity", "Failed to initialize Places API", e);
+            Toast.makeText(this, "Failed to initialize location services: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            return;
         }
 
         // Initialize views
@@ -107,7 +159,14 @@ public class LocationActivity extends AppCompatActivity {
         sessionManager = new SessionManager(this);
         
         // Check if coming from farmer flow or community member flow
-        isFarmerMode = getIntent().getBooleanExtra("is_farmer", sessionManager.isLoggedIn());
+        // First check if intent has explicit is_farmer flag
+        boolean explicitFarmerFlag = getIntent().hasExtra("is_farmer");
+        if (explicitFarmerFlag) {
+            isFarmerMode = getIntent().getBooleanExtra("is_farmer", false);
+        } else {
+            // If no explicit flag, determine from session manager
+            isFarmerMode = sessionManager.isLoggedIn() && sessionManager.isFarmer();
+        }
         
         // Initialize location services
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -127,7 +186,6 @@ public class LocationActivity extends AppCompatActivity {
 
     private void initializeViews() {
         cardSearchLocation = findViewById(R.id.cardSearchLocation);
-        cardCurrentLocation = findViewById(R.id.cardCurrentLocation);
         cardSelectedLocation = findViewById(R.id.cardSelectedLocation);
         tvSelectedLocationName = findViewById(R.id.tvSelectedLocationName);
         tvSelectedLocationAddress = findViewById(R.id.tvSelectedLocationAddress);
@@ -142,21 +200,34 @@ public class LocationActivity extends AppCompatActivity {
         // Search location click
         cardSearchLocation.setOnClickListener(v -> startLocationSearch());
 
-        // Current location click
-        cardCurrentLocation.setOnClickListener(v -> requestLocationPermission());
-
         // Confirm location click
         btnConfirmLocation.setOnClickListener(v -> confirmLocation());
     }
 
     private void startLocationSearch() {
-        // Set the fields to specify which types of place data to return
-        List<Place.Field> fields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG);
+        android.util.Log.d("LocationActivity", "Starting location search...");
+        
+        // Check if Places is initialized
+        if (!Places.isInitialized()) {
+            android.util.Log.e("LocationActivity", "Places API not initialized");
+            Toast.makeText(this, "Location services not ready. Please restart the app.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        
+        try {
+            // Set the fields to specify which types of place data to return
+            List<Place.Field> fields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG);
 
-        // Start the autocomplete intent
-        Intent intent = new Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
-                .build(this);
-        startAutocomplete.launch(intent);
+            // Start the autocomplete intent
+            Intent intent = new Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
+                    .build(this);
+            
+            android.util.Log.d("LocationActivity", "Launching autocomplete intent...");
+            startAutocomplete.launch(intent);
+        } catch (Exception e) {
+            android.util.Log.e("LocationActivity", "Error starting location search", e);
+            Toast.makeText(this, "Error starting location search: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     private void requestLocationPermission() {
@@ -293,7 +364,6 @@ public class LocationActivity extends AppCompatActivity {
     private void showProgress(boolean show) {
         progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
         cardSearchLocation.setEnabled(!show);
-        cardCurrentLocation.setEnabled(!show);
     }
     
     private void handleBackPressed() {

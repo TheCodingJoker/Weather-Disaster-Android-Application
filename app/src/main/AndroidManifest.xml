@@ -12,9 +12,9 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/logo"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@drawable/logo"
         android:supportsRtl="true"
         android:theme="@style/Theme.DisasterDetectorAlert"
         tools:targetApi="31">
@@ -24,6 +24,16 @@
             android:theme="@style/Theme.DisasterDetectorAlert" />
         <activity
             android:name=".CropManagementActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DisasterDetectorAlert"
+            android:parentActivityName=".FarmerDashboardActivity" />
+        <activity
+            android:name=".FarmerForecastActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DisasterDetectorAlert"
+            android:parentActivityName=".FarmerDashboardActivity" />
+        <activity
+            android:name=".FarmerSettingsActivity"
             android:exported="false"
             android:theme="@style/Theme.DisasterDetectorAlert"
             android:parentActivityName=".FarmerDashboardActivity" />
@@ -68,6 +78,16 @@
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".FarmerRegisterActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DisasterDetectorAlert"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".CommunityLoginActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DisasterDetectorAlert"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".CommunityRegisterActivity"
             android:exported="false"
             android:theme="@style/Theme.DisasterDetectorAlert"
             android:windowSoftInputMode="adjustResize" />

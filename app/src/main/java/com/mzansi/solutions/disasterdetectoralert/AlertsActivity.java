@@ -21,17 +21,13 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.mzansi.solutions.disasterdetectoralert.adapters.DetailedAlertAdapter;
-import com.mzansi.solutions.disasterdetectoralert.adapters.SafetyTipAdapter;
 import com.mzansi.solutions.disasterdetectoralert.api.ApiClient;
-import com.mzansi.solutions.disasterdetectoralert.api.GeminiApiService;
 import com.mzansi.solutions.disasterdetectoralert.api.WeatherApiService;
 import com.mzansi.solutions.disasterdetectoralert.services.RealTimeDisasterAlertService;
 import com.mzansi.solutions.disasterdetectoralert.models.DetailedAlert;
 import com.mzansi.solutions.disasterdetectoralert.models.DisasterAlert;
-import com.mzansi.solutions.disasterdetectoralert.models.SafetyTip;
 import com.mzansi.solutions.disasterdetectoralert.models.WeatherData;
 import com.mzansi.solutions.disasterdetectoralert.models.WeatherResponse;
-import com.mzansi.solutions.disasterdetectoralert.models.Weather;
 import com.mzansi.solutions.disasterdetectoralert.utils.SessionManager;
 
 import java.util.ArrayList;
@@ -56,24 +52,18 @@ public class AlertsActivity extends AppCompatActivity {
 
     // Views
     private RecyclerView rvDetailedAlerts;
-    private RecyclerView rvSafetyTips;
     private TextView tvNoAlerts;
-    private TextView tvNoTips;
     private MaterialButton btnRefreshAlerts;
-    private MaterialButton btnGenerateTips;
     private ProgressBar progressBar;
     private BottomNavigationView bottomNavigation;
 
     // Adapters
     private DetailedAlertAdapter alertAdapter;
-    private SafetyTipAdapter tipAdapter;
 
     // Data
     private List<DetailedAlert> detailedAlerts;
-    private List<SafetyTip> safetyTips;
 
     // API Services
-    private GeminiApiService geminiApiService;
     private WeatherApiService weatherApiService;
     
     // Constants for API
@@ -91,9 +81,18 @@ public class AlertsActivity extends AppCompatActivity {
         });
 
         // Initialize SharedPreferences
-        // Check if user is a logged-in farmer
+        // Check if user is logged in
         sessionManager = new SessionManager(this);
-        isFarmer = sessionManager.isLoggedIn();
+        if (!sessionManager.isLoggedIn()) {
+            // User is not logged in, redirect to appropriate login
+            Intent intent = new Intent(this, CommunityLoginActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        
+        // Check if user is a farmer
+        isFarmer = sessionManager.isFarmer();
         
         // Use appropriate SharedPreferences
         String prefsName = isFarmer ? FARMER_PREFS_NAME : COMMUNITY_PREFS_NAME;
@@ -108,7 +107,6 @@ public class AlertsActivity extends AppCompatActivity {
         initializeData();
         
         // Initialize API services
-        geminiApiService = new GeminiApiService();
         weatherApiService = ApiClient.getClient().create(WeatherApiService.class);
         
         // Setup adapters
@@ -126,11 +124,8 @@ public class AlertsActivity extends AppCompatActivity {
 
     private void initializeViews() {
         rvDetailedAlerts = findViewById(R.id.rvDetailedAlerts);
-        rvSafetyTips = findViewById(R.id.rvSafetyTips);
         tvNoAlerts = findViewById(R.id.tvNoAlerts);
-        tvNoTips = findViewById(R.id.tvNoTips);
         btnRefreshAlerts = findViewById(R.id.btnRefreshAlerts);
-        btnGenerateTips = findViewById(R.id.btnGenerateTips);
         progressBar = findViewById(R.id.progressBar);
         bottomNavigation = findViewById(R.id.bottomNavigation);
 
@@ -153,6 +148,14 @@ public class AlertsActivity extends AppCompatActivity {
                 .setTitle("Exit App")
                 .setMessage("Do you really want to leave the app?")
                 .setPositiveButton("Yes", (dialog, which) -> {
+                    // Clear session and logout
+                    SessionManager sessionManager = new SessionManager(this);
+                    sessionManager.logout();
+                    
+                    // Clear community member location preferences
+                    SharedPreferences communityPrefs = getSharedPreferences(COMMUNITY_PREFS_NAME, MODE_PRIVATE);
+                    communityPrefs.edit().clear().apply();
+                    
                     // Exit the app completely
                     finishAffinity();
                 })
@@ -166,7 +169,6 @@ public class AlertsActivity extends AppCompatActivity {
 
     private void initializeData() {
         detailedAlerts = new ArrayList<>();
-        safetyTips = new ArrayList<>();
     }
 
     private void setupAdapters() {
@@ -174,14 +176,12 @@ public class AlertsActivity extends AppCompatActivity {
         alertAdapter = new DetailedAlertAdapter(detailedAlerts);
         rvDetailedAlerts.setLayoutManager(new LinearLayoutManager(this));
         rvDetailedAlerts.setAdapter(alertAdapter);
-
-        // Tips adapter
-        tipAdapter = new SafetyTipAdapter(safetyTips);
-        rvSafetyTips.setLayoutManager(new LinearLayoutManager(this));
-        rvSafetyTips.setAdapter(tipAdapter);
     }
 
     private void setupBottomNavigation() {
+        // Set the alerts icon as selected
+        bottomNavigation.setSelectedItemId(R.id.nav_alerts);
+        
         bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_dashboard) {
@@ -212,7 +212,6 @@ public class AlertsActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         btnRefreshAlerts.setOnClickListener(v -> loadDetailedAlerts());
-        btnGenerateTips.setOnClickListener(v -> generateSafetyTips());
     }
 
     private void loadDetailedAlerts() {
@@ -316,118 +315,6 @@ public class AlertsActivity extends AppCompatActivity {
             long minutes = durationMs / (1000 * 60);
             return minutes + " minutes";
         }
-    }
-
-    private void generateSafetyTips() {
-        if (detailedAlerts.isEmpty()) {
-            Toast.makeText(this, "No active alerts to generate tips for", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        showProgress(true);
-        btnGenerateTips.setEnabled(false);
-        btnGenerateTips.setText(getString(R.string.generating_tips));
-
-        // Get the most severe active alert
-        DetailedAlert mostSevereAlert = getMostSevereAlert();
-        if (mostSevereAlert != null) {
-            String location = sharedPreferences.getString(KEY_LOCATION_NAME, "Your Location");
-
-            geminiApiService.generateSafetyTips(
-                    mostSevereAlert.getCategory(),
-                    mostSevereAlert.getSeverity(),
-                    location,
-                    new GeminiApiService.SafetyTipsCallback() {
-                        @Override
-                        public void onSuccess(String tips) {
-                            runOnUiThread(() -> {
-                                showProgress(false);
-                                btnGenerateTips.setEnabled(true);
-                                btnGenerateTips.setText(getString(R.string.generate_tips));
-                                parseAndDisplayTips(tips);
-                            });
-                        }
-
-                        @Override
-                        public void onError(String error) {
-                            runOnUiThread(() -> {
-                                showProgress(false);
-                                btnGenerateTips.setEnabled(true);
-                                btnGenerateTips.setText(getString(R.string.generate_tips));
-                                Toast.makeText(AlertsActivity.this, getString(R.string.tips_error), Toast.LENGTH_SHORT).show();
-                            });
-                        }
-                    }
-            );
-        }
-    }
-
-    private DetailedAlert getMostSevereAlert() {
-        DetailedAlert mostSevere = null;
-        for (DetailedAlert alert : detailedAlerts) {
-            if (alert.isActive()) {
-                if (mostSevere == null) {
-                    mostSevere = alert;
-                } else {
-                    // Compare severity levels
-                    if (alert.getSeverity().equals("HIGH") && !mostSevere.getSeverity().equals("HIGH")) {
-                        mostSevere = alert;
-                    } else if (alert.getSeverity().equals("MEDIUM") && mostSevere.getSeverity().equals("LOW")) {
-                        mostSevere = alert;
-                    }
-                }
-            }
-        }
-        return mostSevere;
-    }
-
-    private void parseAndDisplayTips(String tips) {
-        safetyTips.clear();
-        
-        // Parse the AI response and create SafetyTip objects
-        String[] lines = tips.split("\n");
-        int tipNumber = 1;
-        
-        for (String line : lines) {
-            line = line.trim();
-            if (line.isEmpty()) continue;
-            
-            // Remove numbering if present
-            if (line.matches("^\\d+\\.\\s+.*")) {
-                line = line.replaceFirst("^\\d+\\.\\s+", "");
-            }
-            
-            if (!line.isEmpty()) {
-                SafetyTip tip = new SafetyTip(
-                        String.valueOf(tipNumber),
-                        "Safety Tip " + tipNumber,
-                        line,
-                        "AI Generated",
-                        "GENERAL",
-                        System.currentTimeMillis(),
-                        true
-                );
-                safetyTips.add(tip);
-                tipNumber++;
-            }
-        }
-        
-        tipAdapter.notifyDataSetChanged();
-        updateTipsVisibility();
-    }
-
-    private void updateAlertsVisibility() {
-        int activeAlerts = 0;
-        for (DetailedAlert alert : detailedAlerts) {
-            if (alert.isActive()) {
-                activeAlerts++;
-            }
-        }
-        tvNoAlerts.setVisibility(activeAlerts == 0 ? View.VISIBLE : View.GONE);
-    }
-
-    private void updateTipsVisibility() {
-        tvNoTips.setVisibility(safetyTips.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
     private void showProgress(boolean show) {
